@@ -11,11 +11,11 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      ECR_REGION: us-east-2               # Change to your AWS region
-      ECR_REPO_NAME: my-node-app-repo     # Change to your ECR repository name
-      CLUSTER_NAME: poc-cluster        # Change to your Kubernetes cluster name
-      NAMESPACE: default                  # Kubernetes namespace to deploy
-      HELM_RELEASE_NAME: my-node-app      # Helm release name
+      ECR_REGION: us-east-2              
+      ECR_REPO_NAME: my-node-app-repo     
+      CLUSTER_NAME: poc-cluster       
+      NAMESPACE: default                 
+      HELM_RELEASE_NAME: my-node-app     
 
     steps:
       # Step 1: Checkout the code
@@ -68,3 +68,10 @@ jobs:
       # Step 9: Run tests using Makefile
       - name: Run Tests
         run: make test
+
+      # Step 10: Upload test results as an artifact
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: results.txt
