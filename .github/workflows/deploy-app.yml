@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      ECR_REGION: us-east-1               # Change to your AWS region
+      ECR_REGION: us-east-2               # Change to your AWS region
       ECR_REPO_NAME: my-node-app-repo     # Change to your ECR repository name
-      CLUSTER_NAME: my-k8s-cluster        # Change to your Kubernetes cluster name
+      CLUSTER_NAME: poc-cluster        # Change to your Kubernetes cluster name
       NAMESPACE: default                  # Kubernetes namespace to deploy
       HELM_RELEASE_NAME: my-node-app      # Helm release name
 
@@ -61,7 +61,7 @@ jobs:
       - name: Deploy using Helm
         run: |
           IMAGE_TAG=$AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$ECR_REPO_NAME:latest
-          helm upgrade --install $HELM_RELEASE_NAME ./helm-chart \
+          helm upgrade --install $HELM_RELEASE_NAME ./chart \
             --namespace $NAMESPACE \
             --set image.repository=$IMAGE_TAG
 
