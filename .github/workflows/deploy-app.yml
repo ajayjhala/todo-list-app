@@ -1,0 +1,70 @@
+name: CI/CD for Node Application
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-push-deploy:
+    name: Build, Push, Deploy, and Test
+    runs-on: ubuntu-latest
+
+    env:
+      ECR_REGION: us-east-1               # Change to your AWS region
+      ECR_REPO_NAME: my-node-app-repo     # Change to your ECR repository name
+      CLUSTER_NAME: my-k8s-cluster        # Change to your Kubernetes cluster name
+      NAMESPACE: default                  # Kubernetes namespace to deploy
+      HELM_RELEASE_NAME: my-node-app      # Helm release name
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Configure AWS CLI
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.ECR_REGION }}
+
+      # Step 3: Login to ECR
+      - name: Login to Amazon ECR
+        run: aws ecr get-login-password --region $ECR_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com
+
+      # Step 4: Build Docker image
+      - name: Build Docker Image
+        run: |
+          IMAGE_TAG=$AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$ECR_REPO_NAME:latest
+          docker build -t $IMAGE_TAG .
+
+      # Step 5: Push Docker image to ECR
+      - name: Push Docker Image
+        run: |
+          IMAGE_TAG=$AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$ECR_REPO_NAME:latest
+          docker push $IMAGE_TAG
+
+      # Step 6: Set up kubectl
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      # Step 7: Update kubeconfig
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name $CLUSTER_NAME --region $ECR_REGION
+
+      # Step 8: Deploy using Helm
+      - name: Deploy using Helm
+        run: |
+          IMAGE_TAG=$AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$ECR_REPO_NAME:latest
+          helm upgrade --install $HELM_RELEASE_NAME ./helm-chart \
+            --namespace $NAMESPACE \
+            --set image.repository=$IMAGE_TAG
+
+      # Step 9: Run tests using Makefile
+      - name: Run Tests
+        run: make test
