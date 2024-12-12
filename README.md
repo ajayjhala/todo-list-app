@@ -1,61 +1,98 @@
-# Example to-do List Application
+# Deploying Node.js Application to Kubernetes Cluster with Helm Chart
 
-This repository is a simple to-do list manager that runs on Node.js.
+This repository contains everything required to deploy this Node.js application to a Kubernetes cluster using Helm charts. The deployment process is automated via a GitHub Actions workflow. Autoscaling is enabled for the application, ensuring that whenever CPU utilization crosses 80%, additional replicas will be created to handle the load.
 
-## Getting started
+## Features
 
-Download [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac or Windows. Docker Compose will be automatically installed. 
-On Linux, make sure you have the latest version of [Compose](https://docs.docker.com/compose/install/).
+1. Dockerize the Node.js application and push the image to AWS ECR.
+2. Deploy the Docker image to a Kubernetes cluster using Helm charts.
+3. Autoscaling based on CPU utilization (threshold: 80%).
+4. Post-deployment testing using `make test`, with results stored in GitHub Actions artifacts.
 
-## Clone the repository
+## Prerequisites
 
-Open a terminal and clone this sample application.
+- **AWS Account**:
+  - AWS CLI configured with sufficient permissions.
+  - An ECR repository for storing the Docker image.
+- **Kubernetes Cluster**: An existing Kubernetes cluster (e.g., AWS EKS).
+- **Helm**: Installed for managing Kubernetes deployments ([Install Helm](https://helm.sh/docs/intro/install/)).
+- **kubectl**: Installed and configured to interact with your Kubernetes cluster.
+- **GitHub Repository**: A repository for hosting the source code and workflow configuration.
+- **Terraform** (optional): For managing the Kubernetes infrastructure.
 
-```
- git clone https://github.com/dockersamples/todo-list-app
-```
-
-## Run the app
-
-Navigate into the todo-list-app directory:
-
-```
-docker compose up -d --build
-```
-
-When you run this command, you should see an output like this:
+## Directory Structure
 
 ```
-[+] Running 4/4
-✔ app 3 layers [⣿⣿⣿]      0B/0B            Pulled           7.1s
-  ✔ e6f4e57cc59e Download complete                          0.9s
-  ✔ df998480d81d Download complete                          1.0s
-  ✔ 31e174fedd23 Download complete                          2.5s
-[+] Running 2/4
-  ⠸ Network todo-list-app_default           Created         0.3s
-  ⠸ Volume "todo-list-app_todo-mysql-data"  Created         0.3s
-  ✔ Container todo-list-app-app-1           Started         0.3s
-  ✔ Container todo-list-app-mysql-1         Started         0.3s
+.
+├── Dockerfile
+├── chart/
+│   └── templates/
+│   └── values.yaml
+├── src/
+│   └── index.js
+├── Makefile
+├── .github/
+│   └── workflows/
+│       └── deploy-app.yml
+├── README.md
 ```
 
-## List the services
+## Steps to Use
 
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/ajayjhala/todo-list-app
+cd nodejs-k8s-helm
 ```
-docker compose ps
-NAME                    IMAGE            COMMAND                  SERVICE   CREATED          STATUS          PORTS
-todo-list-app-app-1     node:18-alpine   "docker-entrypoint.s…"   app       24 seconds ago   Up 7 seconds    127.0.0.1:3000->3000/tcp
-todo-list-app-mysql-1   mysql:8.0        "docker-entrypoint.s…"   mysql     24 seconds ago   Up 23 seconds   3306/tcp, 33060/tcp
+
+### Step 2: Push changes to GitHub repo
+
+Push changes to the `main` branch to trigger the automated workflow.
+
+```bash
+git add .
+git commit -m "Deploying app"
+git push origin main
 ```
 
-If you look at the Docker Desktop GUI, you can see the containers and dive deeper into their configuration.
+## GitHub Actions Workflow
+
+### Workflow Location
+
+The workflow file is located at `.github/workflows/deploy-app.yml`.
+
+### Workflow Steps
+
+1. **Build and Push Docker Image**:
+   - The Node.js application is containerized using the `Dockerfile` and pushed to the AWS ECR repository.
+2. **Deploy to Kubernetes**:
+   - The application is deployed to the Kubernetes cluster using Helm.
+3. **Run Post-Deployment Tests**:
+   - `make test` is executed to ensure the application is functioning correctly.
+   - The test results are stored as GitHub Actions artifacts for future reference.
+
+### Example Workflow Trigger
+
+```yaml
+on:
+  push:
+    branches:
+      - main
+```
+
+## Horizontal Pod Autoscaler (HPA)
+
+The HPA configuration is defined in `chart/values.yaml`. It ensures the application scales up or down based on CPU utilization:
 
 
+## Running Tests
 
+Testing is handled by a `Makefile`. Run tests locally with:
 
-<img width="1330" alt="image" src="https://github.com/dockersamples/todo-list-app/assets/313480/d85a4bcf-e2c3-4917-9220-7d9b9a78dc54">
+```bash
+make test
+```
 
-
-## Access the app
-
-The to-do list app will be running at [http://localhost:3000](http://localhost:3000).
+The test results will also be uploaded as GitHub Actions artifacts after deployment.
 
