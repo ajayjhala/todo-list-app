@@ -24,6 +24,7 @@ This repository contains everything required to deploy this Node.js application 
   - AWS_SECRET_ACCESS_KEY
   - AWS_REGION
   - AWS_ACCOUNT_ID
+- **Load Testing** To perform load test, make sure you update APP_URL in the Makefile with the right application URL.
 
 ## Directory Structure
 
