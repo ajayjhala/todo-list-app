@@ -105,4 +105,4 @@ The test results will also be uploaded as GitHub Actions artifacts after deploym
 
 If you want to run it locally, start the docker container with `docker compose up -d --build`. The to-do list app will be accessible at http://localhost:3000. 
 
-While accessing it from the cloud, make sure right DNS record is created and replace `locakhost` with the the DNS name.
+While accessing it from the cloud, make sure right DNS record is created and replace `localhost` with the the DNS name.
