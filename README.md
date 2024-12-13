@@ -91,6 +91,19 @@ on:
 
 The HPA configuration is defined in `chart/values.yaml`. It ensures the application scales up or down based on CPU utilization:
 
+## Fault-Tolerance and Scaling Approach
+
+### 1. Horizontal Pod Autoscaler (HPA) for Scaling
+The Horizontal Pod Autoscaler (HPA) ensures the application can handle varying loads by automatically adjusting the number of pods based on resource utilization.
+
+- **Scaling Trigger**: HPA is configured to monitor the CPU utilization of the pods. If the average CPU usage exceeds 80%, HPA scales up the number of pods to distribute the load effectively.
+- **Scaling Down**: When CPU utilization decreases, HPA scales down the pods to optimize resource usage and cost.
+
+### 2. Readiness and Liveness Probes for Fault Tolerance
+Readiness and liveness probes enhance the fault-tolerance of the application by ensuring only healthy pods serve traffic and failed pods are replaced automatically.
+
+- **Readiness Probes**: These probes check if the pod is ready to accept traffic. If a pod fails the readiness check, it is removed from the Service's endpoints until it recovers.
+- **Liveness Probes**: These probes monitor the pod's health. If a liveness probe fails, Kubernetes restarts the pod to recover from failures like deadlocks or crashes.
 
 ## Running Tests
 
