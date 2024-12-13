@@ -19,6 +19,11 @@ This repository contains everything required to deploy this Node.js application 
 - **kubectl**: Installed and configured to interact with your Kubernetes cluster.
 - **GitHub Repository**: A repository for hosting the source code and workflow configuration.
 - **Terraform** (optional): For managing the Kubernetes infrastructure.
+- **Create GitHub secrets**
+  - AWS_ACCESS_KEY_ID
+  - AWS_SECRET_ACCESS_KEY
+  - AWS_REGION
+  - AWS_ACCOUNT_ID
 
 ## Directory Structure
 
@@ -96,3 +101,8 @@ make test
 
 The test results will also be uploaded as GitHub Actions artifacts after deployment.
 
+## Access the app
+
+If you want to run it locally, start the docker container with `docker compose up -d --build`. The to-do list app will be accessible at http://localhost:3000. 
+
+While accessing it from the cloud, make sure right DNS record is created and replace `locakhost` with the the DNS name.

@@ -1,4 +1,4 @@
-name: CI/CD for Node Application
+name: CI/CD Pipeline for ToDo-List-App
 
 on:
   push:
@@ -6,70 +6,79 @@ on:
       - main
 
 jobs:
-  build-push-deploy:
-    name: Build, Push, Deploy, and Test
+  build-and-push:
+    name: Build and Push Docker Image
     runs-on: ubuntu-latest
 
-    env:
-      ECR_REGION: us-east-2              
-      ECR_REPO_NAME: my-node-app-repo     
-      CLUSTER_NAME: poc-cluster       
-      NAMESPACE: default                 
-      HELM_RELEASE_NAME: my-node-app     
-
     steps:
-      # Step 1: Checkout the code
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Step 2: Configure AWS CLI
-      - name: Configure AWS CLI
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.ECR_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      # Step 3: Login to ECR
-      - name: Login to Amazon ECR
-        run: aws ecr get-login-password --region $ECR_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
 
-      # Step 4: Build Docker image
       - name: Build Docker Image
         run: |
-          IMAGE_TAG=$AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$ECR_REPO_NAME:latest
-          docker build -t $IMAGE_TAG .
+          IMAGE_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/todo-list-app"
+          docker build -t $IMAGE_URI:$GITHUB_SHA .
 
-      # Step 5: Push Docker image to ECR
-      - name: Push Docker Image
+      - name: Push Docker Image to ECR
         run: |
-          IMAGE_TAG=$AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$ECR_REPO_NAME:latest
-          docker push $IMAGE_TAG
+          IMAGE_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/todo-list-app"
+          docker push $IMAGE_URI:$GITHUB_SHA
 
-      # Step 6: Set up kubectl
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'latest'
 
-      # Step 7: Update kubeconfig
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Update kubeconfig
         run: |
-          aws eks update-kubeconfig --name $CLUSTER_NAME --region $ECR_REGION
+          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name poc-cluster
 
-      # Step 8: Deploy using Helm
-      - name: Deploy using Helm
+      - name: Deploy Application with Helm
         run: |
-          IMAGE_TAG=$AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$ECR_REPO_NAME:latest
-          helm upgrade --install $HELM_RELEASE_NAME ./chart \
-            --namespace $NAMESPACE \
-            --set image.repository=$IMAGE_TAG
+          helm upgrade --install todo-list-app ./chart \
+            --set image.repository=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/todo-list-app \
+            --set image.tag=$GITHUB_SHA
 
-      # Step 9: Run tests using Makefile
+  test:
+    name: Run Tests and Store Results
+    runs-on: ubuntu-latest
+    needs: deploy
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
       - name: Run Tests
-        run: make test
+        run: |
+          make test
 
-      # Step 10: Upload test results as an artifact
       - name: Upload Test Results
         uses: actions/upload-artifact@v3
         with:
