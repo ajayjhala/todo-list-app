@@ -1,6 +1,6 @@
 # Deploying Node.js Application to Kubernetes Cluster with Helm Chart
 
-This repository contains everything required to deploy this Node.js application to a Kubernetes cluster using Helm charts. The deployment process is automated via a GitHub Actions workflow. Autoscaling is enabled for the application, ensuring that whenever CPU utilization crosses 80%, additional replicas will be created to handle the load.
+This repository is a simple to-do list manager that runs on Node.js. This repository contains everything required to deploy this Node.js application to a Kubernetes cluster using Helm charts. The deployment process is automated via a GitHub Actions workflow. Autoscaling is enabled for the application, ensuring that whenever CPU utilization crosses 80%, additional replicas will be created to handle the load.
 
 ## Features
 
